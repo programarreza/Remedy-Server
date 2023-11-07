@@ -1,4 +1,5 @@
 const express = require("express");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
 require("dotenv").config();
 const app = express();
@@ -9,19 +10,18 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
 const uri = `mongodb+srv://${process.env.USER_BD}:${process.env.PASS_DB}@cluster0.2vmdteo.mongodb.net/?retryWrites=true&w=majority`;
-
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
-	serverApi: {
+  serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-},
+  },
 });
-const blogCollection = client.db('blogDB').collection('blog')
+const blogCollection = client.db("blogDB").collection("blog");
+const wishlistCollection = client.db("wishlistDB").collection("wishlist");
 
 async function run() {
   try {
@@ -29,19 +29,49 @@ async function run() {
     await client.connect();
     // Send a ping to confirm a successful connection
 
+    // blog
+    app.post("/blog", async (req, res) => {
+      const blog = req.body;
+      console.log(blog);
+      const result = await blogCollection.insertOne(blog);
+      res.send(result);
+    });
 
-	// blog 
-	app.post('/blog', async(req, res) => {
-		const blog = req.body;
-		console.log(blog);
-		const result = await blogCollection.insertOne(blog)
-		res.send(result);
+    // recent recent blog
+    app.get("/recent-blog", async (req, res) => {
+      const sortBlog = await blogCollection
+        .find()
+        .sort({ currentDate: -1 })
+        .limit(6)
+        .toArray();
+      res.send(sortBlog);
+    });
+
+    app.get("/blog-details/:id", async(req, res) => {
+      const id = req.params.id;
+      console.log( id);
+      const query = { _id: new ObjectId(id) };
+      const result = await blogCollection.findOne(query);
+	  console.log(result);
+      res.send(result);
+    });
+
+
+	// wishlist
+	app.post('/add-wishlist', async(req, res) => {
+		const wishlist = req.body;
+		console.log(wishlist);
+		const result = await wishlistCollection.insertOne(wishlist)
+		res.send(result)
 	})
 
-	// recent blog 
-	app.get('/recent-blog', async(req, res) => {
-		const sortBlog = await blogCollection.find().sort({currentDate: -1 }).limit(6).toArray();
-		res.send(sortBlog)
+	app.get('/add-wishlist', async(req, res) => {
+		let query = {};
+		if(req.query?.email){
+			query = {email: req.query.email}
+		}
+		const result = await wishlistCollection.find(query).toArray();
+		res.send(result);
 	})
 
     await client.db("admin").command({ ping: 1 });

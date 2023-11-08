@@ -21,7 +21,7 @@ const client = new MongoClient(uri, {
 });
 const blogCollection = client.db("blogDB").collection("blog");
 const wishlistCollection = client.db("wishlistDB").collection("wishlist");
-const commentCollection = client.db("commentDB").collection("comment")
+const commentCollection = client.db("commentDB").collection("comment");
 
 async function run() {
   try {
@@ -36,16 +36,16 @@ async function run() {
     });
 
     // all blog
-    app.get("/blog", async(req, res) => {
+    app.get("/blog", async (req, res) => {
       let query = {};
       const category = req.query.category;
-      if(category){
+      if (category) {
         query.category = category;
       }
 
-      const cursor = await blogCollection.find(query).toArray()
-      res.send(cursor)
-    })
+      const cursor = await blogCollection.find(query).toArray();
+      res.send(cursor);
+    });
 
     // recent recent blog
     app.get("/recent-blog", async (req, res) => {
@@ -57,72 +57,90 @@ async function run() {
       res.send(sortBlog);
     });
 
-    app.get("/blog-details/:id", async(req, res) => {
+    app.get("/blog-details/:id", async (req, res) => {
       const id = req.params.id;
       // console.log( id);
       const query = { _id: new ObjectId(id) };
       const result = await blogCollection.findOne(query);
-	  // console.log(result);
+      // console.log(result);
       res.send(result);
     });
 
+    app.get("/blog-update/:id", async (req, res) => {
+      const id = req.params.id;
+      // console.log( id);
+      const query = { _id: new ObjectId(id) };
+      const result = await blogCollection.findOne(query);
+      // console.log(result);
+      res.send(result);
+    });
 
-	// wishlist
-	app.post('/add-wishlist', async(req, res) => {
-		const wishlist = req.body;
-		// console.log(wishlist);
-		const result = await wishlistCollection.insertOne(wishlist)
-		res.send(result)
-	})
+    // update blog
+    app.put("/blog-update/:id", async (req, res) => {
+      const id = req.params.id;
+      const updateBlog = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const blog = {
+        $set: {
+          title: updateBlog.title,
+          image: updateBlog.image,
+          category: updateBlog.category,
+          shortDescription: updateBlog.shortDescription,
+          longDescription: updateBlog.longDescription,
+        },
+      };
+      const result = await blogCollection.updateOne(filter, blog, options);
+      res.send(result);
+    });
 
-	app.get('/add-wishlist', async(req, res) => {
-		let query = {};
-		if(req.query?.email){
-			query = {email: req.query.email}
-		}
-		const result = await wishlistCollection.find(query).toArray();
-		res.send(result);
-	})
+    // wishlist
+    app.post("/add-wishlist", async (req, res) => {
+      const wishlist = req.body;
+      // console.log(wishlist);
+      const result = await wishlistCollection.insertOne(wishlist);
+      res.send(result);
+    });
 
-  app.delete('/delete-wishlist/:id', async(req, res) => {
-    const id = req.params.id;
-    // console.log(id);
-    const query = {_id: new ObjectId(id)};
-    const result = await wishlistCollection.deleteOne(query);
-    res.send(result);
-  })
+    app.get("/add-wishlist", async (req, res) => {
+      let query = {};
+      if (req.query?.email) {
+        query = { email: req.query.email };
+      }
+      const result = await wishlistCollection.find(query).toArray();
+      res.send(result);
+    });
 
-  // update blog
-  app.put('/update-blog', async(req, res) => {
-    const id = req.params.id;
-    console.log(id);
-  })
+    app.delete("/delete-wishlist/:id", async (req, res) => {
+      const id = req.params.id;
+      // console.log(id);
+      const query = { _id: new ObjectId(id) };
+      const result = await wishlistCollection.deleteOne(query);
+      res.send(result);
+    });
 
+    // comment api
+    app.post("/comment", async (req, res) => {
+      const comment = req.body;
+      // console.log(comment);
+      const result = await commentCollection.insertOne(comment);
+      res.send(result);
+    });
 
-
-  // comment api
-  app.post('/comment', async(req, res) => {
-    const comment = req.body;
-    // console.log(comment);
-    const result = await commentCollection.insertOne(comment)
-    res.send(result);
-  })
-
-  app.get('/comment', async(req, res) => {
-    let query = {}
-    if(req.query?.blog_id){
-      query = {blog_id: req.query.blog_id}
-    }
-    const result = await commentCollection.find(query).toArray();
-    res.send(result)
-  })
+    app.get("/comment", async (req, res) => {
+      let query = {};
+      if (req.query?.blog_id) {
+        query = { blog_id: req.query.blog_id };
+      }
+      const result = await commentCollection.find(query).toArray();
+      res.send(result);
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
   } finally {
-    
     // await client.close();
   }
 }

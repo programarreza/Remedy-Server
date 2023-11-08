@@ -37,6 +37,18 @@ async function run() {
       res.send(result);
     });
 
+    // all blog
+    app.get("/blog", async(req, res) => {
+      let query = {};
+      const category = req.query.category;
+      if(category){
+        query.category = category;
+      }
+
+      const cursor = await blogCollection.find(query).toArray()
+      res.send(cursor)
+    })
+
     // recent recent blog
     app.get("/recent-blog", async (req, res) => {
       const sortBlog = await blogCollection
@@ -73,6 +85,14 @@ async function run() {
 		const result = await wishlistCollection.find(query).toArray();
 		res.send(result);
 	})
+
+  app.delete('/delete-wishlist/:id', async(req, res) => {
+    const id = req.params.id;
+    console.log(id);
+    const query = {_id: new ObjectId(id)};
+    const result = await wishlistCollection.deleteOne(query);
+    res.send(result);
+  })
 
     await client.db("admin").command({ ping: 1 });
     console.log(

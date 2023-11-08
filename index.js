@@ -22,6 +22,7 @@ const client = new MongoClient(uri, {
 });
 const blogCollection = client.db("blogDB").collection("blog");
 const wishlistCollection = client.db("wishlistDB").collection("wishlist");
+const commentCollection = client.db("commentDB").collection("comment")
 
 async function run() {
   try {
@@ -92,6 +93,20 @@ async function run() {
     const query = {_id: new ObjectId(id)};
     const result = await wishlistCollection.deleteOne(query);
     res.send(result);
+  })
+
+
+  // comment api
+  app.post('/comment', async(req, res) => {
+    const comment = req.body;
+    console.log(comment);
+    const result = await commentCollection.insertOne(comment)
+    res.send(result);
+  })
+
+  app.get('/comment', async(req, res) => {
+    const result = await commentCollection.find().toArray();
+    res.send(result)
   })
 
     await client.db("admin").command({ ping: 1 });

@@ -12,7 +12,6 @@ app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.USER_BD}:${process.env.PASS_DB}@cluster0.2vmdteo.mongodb.net/?retryWrites=true&w=majority`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -26,14 +25,12 @@ const commentCollection = client.db("commentDB").collection("comment")
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    // Send a ping to confirm a successful connection
 
     // blog
     app.post("/blog", async (req, res) => {
       const blog = req.body;
-      console.log(blog);
+      // console.log(blog);
       const result = await blogCollection.insertOne(blog);
       res.send(result);
     });
@@ -62,10 +59,10 @@ async function run() {
 
     app.get("/blog-details/:id", async(req, res) => {
       const id = req.params.id;
-      console.log( id);
+      // console.log( id);
       const query = { _id: new ObjectId(id) };
       const result = await blogCollection.findOne(query);
-	  console.log(result);
+	  // console.log(result);
       res.send(result);
     });
 
@@ -73,7 +70,7 @@ async function run() {
 	// wishlist
 	app.post('/add-wishlist', async(req, res) => {
 		const wishlist = req.body;
-		console.log(wishlist);
+		// console.log(wishlist);
 		const result = await wishlistCollection.insertOne(wishlist)
 		res.send(result)
 	})
@@ -89,23 +86,34 @@ async function run() {
 
   app.delete('/delete-wishlist/:id', async(req, res) => {
     const id = req.params.id;
-    console.log(id);
+    // console.log(id);
     const query = {_id: new ObjectId(id)};
     const result = await wishlistCollection.deleteOne(query);
     res.send(result);
   })
 
+  // update blog
+  app.put('/update-blog', async(req, res) => {
+    const id = req.params.id;
+    console.log(id);
+  })
+
+
 
   // comment api
   app.post('/comment', async(req, res) => {
     const comment = req.body;
-    console.log(comment);
+    // console.log(comment);
     const result = await commentCollection.insertOne(comment)
     res.send(result);
   })
 
   app.get('/comment', async(req, res) => {
-    const result = await commentCollection.find().toArray();
+    let query = {}
+    if(req.query?.blog_id){
+      query = {blog_id: req.query.blog_id}
+    }
+    const result = await commentCollection.find(query).toArray();
     res.send(result)
   })
 
@@ -114,7 +122,7 @@ async function run() {
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
   } finally {
-    // Ensures that the client will close when you finish/error
+    
     // await client.close();
   }
 }

@@ -57,6 +57,39 @@ async function run() {
       res.send(sortBlog);
     });
 
+    // top blog
+    app.get("/top-blog", async (req, res) => {
+      const topBlogs = await blogCollection
+        .aggregate([
+          {
+            $project: {
+              title: 1,
+              userName: 1,
+              userProfile: 1,
+              longDescription: 1,
+              wordCount: { $size: { $split: ["$longDescription", " "] } }
+            }
+          },
+          { $sort: { wordCount: -1 } },
+          { $limit: 10 }
+        ])
+        .toArray();
+    
+      // Extracting only the necessary data for response
+      const simplifiedTopBlogs = topBlogs.map(blog => ({
+        title: blog.title,
+        userName: blog.userName,
+        userProfile: blog.userProfile,
+        longDescription: blog.longDescription,
+        wordCount: blog.wordCount
+      }));
+    
+      res.send(simplifiedTopBlogs);
+    });
+    
+    
+    
+
     app.get("/blog-details/:id", async (req, res) => {
       const id = req.params.id;
       // console.log( id);

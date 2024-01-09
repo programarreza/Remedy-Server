@@ -3,7 +3,6 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
 require("dotenv").config();
 const app = express();
-// const axios = require('axios')
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -30,20 +29,32 @@ async function run() {
     // blog
     app.post("/blog", async (req, res) => {
       const blog = req.body;
-      // console.log(blog);
       const result = await blogCollection.insertOne(blog);
       res.send(result);
     });
 
     // all blog
     app.get("/blog", async (req, res) => {
-      let query = {};
+      // let query = {};
+      // const category = req.query.category;
+      // if (category) {
+      //   query.category = category;
+      // }
+      // const cursor = await blogCollection.find(query).toArray();
+      // res.send(cursor);
+      const queryObj = {};
+
       const category = req.query.category;
+      const title = req.query.title;
+
       if (category) {
-        query.category = category;
+        queryObj.category = { $regex: new RegExp(category) };
+      }
+      if (title) {
+        queryObj.title = { $regex: new RegExp(title, "i") };
       }
 
-      const cursor = await blogCollection.find(query).toArray();
+      const cursor = await blogCollection.find(queryObj).toArray();
       res.send(cursor);
     });
 
@@ -67,44 +78,37 @@ async function run() {
               userName: 1,
               userProfile: 1,
               longDescription: 1,
-              wordCount: { $size: { $split: ["$longDescription", " "] } }
-            }
+              wordCount: { $size: { $split: ["$longDescription", " "] } },
+            },
           },
           { $sort: { wordCount: -1 } },
-          { $limit: 10 }
+          { $limit: 10 },
         ])
         .toArray();
-    
+
       // Extracting only the necessary data for response
-      const simplifiedTopBlogs = topBlogs.map(blog => ({
+      const simplifiedTopBlogs = topBlogs.map((blog) => ({
         title: blog.title,
         userName: blog.userName,
         userProfile: blog.userProfile,
         longDescription: blog.longDescription,
-        wordCount: blog.wordCount
+        wordCount: blog.wordCount,
       }));
-    
+
       res.send(simplifiedTopBlogs);
     });
-    
-    
-    
 
     app.get("/blog-details/:id", async (req, res) => {
       const id = req.params.id;
-      // console.log( id);
       const query = { _id: new ObjectId(id) };
       const result = await blogCollection.findOne(query);
-      // console.log(result);
       res.send(result);
     });
 
     app.get("/blog-update/:id", async (req, res) => {
       const id = req.params.id;
-      // console.log( id);
       const query = { _id: new ObjectId(id) };
       const result = await blogCollection.findOne(query);
-      // console.log(result);
       res.send(result);
     });
 
@@ -130,7 +134,6 @@ async function run() {
     // wishlist
     app.post("/add-wishlist", async (req, res) => {
       const wishlist = req.body;
-      // console.log(wishlist);
       const result = await wishlistCollection.insertOne(wishlist);
       res.send(result);
     });
@@ -146,7 +149,6 @@ async function run() {
 
     app.delete("/delete-wishlist/:id", async (req, res) => {
       const id = req.params.id;
-      // console.log(id);
       const query = { _id: new ObjectId(id) };
       const result = await wishlistCollection.deleteOne(query);
       res.send(result);
@@ -155,7 +157,6 @@ async function run() {
     // comment api
     app.post("/comment", async (req, res) => {
       const comment = req.body;
-      // console.log(comment);
       const result = await commentCollection.insertOne(comment);
       res.send(result);
     });
@@ -168,7 +169,7 @@ async function run() {
       const result = await commentCollection.find(query).toArray();
       res.send(result);
     });
-    
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
